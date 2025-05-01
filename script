@@ -1,0 +1,145 @@
+from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QHBoxLayout, QVBoxLayout, QLabel, QMessageBox, QPushButton, QLineEdit, QTextEdit, QListWidget, QFileDialog
+from PyQt5.QtCore import Qt
+from PIL import Image
+from PIL import ImageFilter
+from PIL.ImageFilter import SHARPEN
+import os
+from PyQt5.QtGui import QPixmap
+#вызов фунций
+
+
+workdir = ''
+def chooseWorkdir():
+    global workdir
+    workdir = QFileDialog.getExistingDirectory()
+
+def filter(files, extensions):
+    spisok22 = list()
+    for file2 in files:
+        for extension in extensions:
+            if file2.endswith(extension):
+                spisok22.append(file2)
+    return spisok22
+
+def showFilenamesList():
+    spisokRR = ['.jpeg', '.png', '.bmp', '.webp', '.pdf']
+    chooseWorkdir()
+    files = filter(os.listdir(workdir), spisokRR)
+    spisok.clear()
+    for file2 in files:
+        spisok.addItem(file2)
+
+class ImageProvessor():
+    def __init__(self):
+        self.image = None
+        self.filename = None
+        self.image_dir = None
+        self.name2 = 'modifyte/'
+
+    def loadImage(self, image_dir, filename):
+        self.image_dir = image_dir
+        self.filename = filename
+        image_path = os.path.join(image_dir, filename)
+        self.image = Image.open(image_path)
+        
+    def showImage(self, path):
+        Kartinka.hide()
+        pixmapimage = QPixmap(path)
+        w, h = Kartinka.width(), Kartinka.height()
+        pixmapimage = pixmapimage.scaled(w, h, Qt.KeepAspectRatio)
+        Kartinka.setPixmap(pixmapimage)
+        Kartinka.show()
+
+    def do_bw(self):
+        self.image = self.image.convert('L')
+        self.saveImage()
+        image_path = os.path.join(self.image_dir, self.name2, self.filename)
+        self.showImage(image_path)
+
+    def do_flip(self):
+        self.image = self.image.transpose(Image.FLIP_LEFT_RIGHT)
+        self.saveImage()
+        image_path = os.path.join(workdir, self.name2, self.filename)
+        self.showImage(image_path)
+
+    def do_left(self):
+        self.image = self.image.transpose(Image.ROTATE_90)
+        self.saveImage()
+        image_path = os.path.join(workdir, self.name2, self.filename)
+        self.showImage(image_path)
+
+    def do_right(self):
+        self.image = self.image.transpose(Image.ROTATE_270)
+        self.saveImage()
+        image_path = os.path.join(workdir, self.name2, self.filename)
+        self.showImage(image_path)
+
+    def do_rezko(self):
+        self.image = self.image.filter(SHARPEN)
+        self.saveImage()
+        image_path = os.path.join(workdir, self.name2, self.filename)
+        self.showImage(image_path)
+
+    def saveImage(self):
+        path = os.path.join(self.image_dir, self.name2)
+        if not(os.path.exists(path) or os.path.isdir(path)):
+            os.mkdir(path)
+        image_path = os.path.join(path, self.filename)
+        self.image.save(image_path)
+#класс
+
+workimage = ImageProvessor()
+
+
+app = QApplication([])
+main_win = QWidget()
+main_win.setWindowTitle('Easy Editor')
+papka = QPushButton('Папка')
+spisok = QListWidget()
+Kartinka = QLabel('Картинка')
+Levo = QPushButton('Лево')
+Pravo = QPushButton('Право')
+Zerkalo = QPushButton('Зеркально')
+Rezko = QPushButton('Резкость')
+HB = QPushButton('Ч/Б')
+LayoutV2 = QVBoxLayout()
+LayoutV1 = QVBoxLayout()
+LayoutH1 = QHBoxLayout()
+LayoutV2.addWidget(papka)
+LayoutV2.addWidget(spisok)
+LayoutV1.addWidget(Kartinka)
+LayoutH1.addWidget(Levo)
+LayoutH1.addWidget(Pravo)
+LayoutH1.addWidget(Zerkalo)
+LayoutH1.addWidget(Rezko)
+LayoutH1.addWidget(HB)
+LayoutV1.addLayout(LayoutH1)
+#создание окна
+
+Layout_win = QHBoxLayout()
+Layout_win.addLayout(LayoutV2)
+Layout_win.addLayout(LayoutV1)
+main_win.setLayout(Layout_win)
+
+papka.clicked.connect(showFilenamesList)
+HB.clicked.connect(workimage.do_bw)
+Zerkalo.clicked.connect(workimage.do_flip)
+Levo.clicked.connect(workimage.do_left)
+Pravo.clicked.connect(workimage.do_right)
+Rezko.clicked.connect(workimage.do_rezko)
+#добавление кнопок
+
+
+def showChosenImage():
+    if spisok.currentRow() >= 0:
+        filename = spisok.currentItem().text()
+        workimage.loadImage(workdir, filename)
+        image_path = os.path.join(workimage.image_dir, workimage.filename)
+        workimage.showImage(image_path)
+
+spisok.currentRowChanged.connect(showChosenImage)
+
+
+
+main_win.show()
+app.exec()
